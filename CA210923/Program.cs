@@ -81,6 +81,8 @@ namespace CA210923
             }
         }
         public Species Species { get; set; }
+
+        public int DpT => Depth + Top;
     }
 
 
@@ -96,20 +98,70 @@ namespace CA210923
             DbRagadozo();
             LegnagyobbHal();
             Db1dot1mMely();
+            MainLoop();
+            GetHalakInfo();
+
+            Report();
             Console.ReadKey();
         }
 
+        private static void Report()
+        {
+            Console.WriteLine("----------------");
+            float osszSuly = 0;
+            foreach (var h in megevettHalak)
+                osszSuly += h.Weight;
+            Console.WriteLine($"Összesen {osszSuly} kilónyi ({megevettHalak.Count} db) növényevőt ettek meg.");
+        }
+
+        private static List<Fish> megevettHalak = new List<Fish>();
+
+        private static void MainLoop()
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                int x = rnd.Next(halak.Count);
+                int y = rnd.Next(halak.Count);
+
+                bool kulonbozoE = halak[x].Predator != halak[y].Predator;
+                bool harmincSzazalek = rnd.Next(100) < 30;
+                //bool harmincSzazalek = true;
+                bool beTudUszni
+                    = halak[x].DpT >= halak[y].Top
+                    && halak[y].DpT >= halak[x].Top;
+
+                if(kulonbozoE && harmincSzazalek && beTudUszni)
+                {
+                    Fish rag, nov;
+
+                    if(halak[x].Predator)
+                    {
+                        rag = halak[x];
+                        nov = halak[y];
+                    }
+                    else
+                    {
+                        rag = halak[y];
+                        nov = halak[x];
+                    }
+
+                    megevettHalak.Add(nov);
+                    halak.Remove(nov);
+
+                    if (rag.Weight * 1.09F > 40) halak.Remove(rag);
+                    else rag.Weight *= 1.09F;
+                    
+                }
+            }
+        }
         private static void Db1dot1mMely()
         {
             int dbMely = 0;
-
             foreach (var h in halak)
                 if (h.Top <= 110 && 110 <= (h.Top + h.Depth)) dbMely++;
-
             Console.WriteLine("----------------");
             Console.WriteLine($"Összesen {dbMely} hal képes 1.1m mélységben úszni");
         }
-
         private static void LegnagyobbHal()
         {
             int legnagyobbHalIndex = 0;
@@ -125,7 +177,6 @@ namespace CA210923
             GetHalInfo(halak[legnagyobbHalIndex]);
 
         }
-
         private static void DbRagadozo()
         {
             int dbRagadozo = 0;
@@ -135,7 +186,6 @@ namespace CA210923
             Console.WriteLine("----------------");
             Console.WriteLine($"Összesen {dbRagadozo} hal ragadozó");
         }
-
         private static void GetHalakInfo()
         {
             foreach (var h in halak)
@@ -146,13 +196,11 @@ namespace CA210923
             }
             Console.ResetColor();
         }
-
         static void GetHalInfo(Fish h)
         {
-            Console.WriteLine("{0, -9} {1,4} Kg sáv:[{2,3}-{3,3}] cm",
-                    h.Species, h.Weight, h.Top, h.Top + h.Depth);
+            Console.WriteLine("[{4,2}]. {0, -9} {1,5:0.00} Kg sáv:[{2,3}-{3,3}] cm",
+                    h.Species, h.Weight, h.Top, h.DpT, halak.IndexOf(h));
         }
-
         static void InitHalak()
         {
             for (int i = 0; i < 100; i++)
